@@ -75,7 +75,8 @@
       
       vec3 pos = position;
       vec4 mdt = texture2D( map, uv );
-      gl_Position = projectionMatrix * modelViewMatrix * vec4( pos, 1.0 );
+      pos.z = mdt.x * 900;
+      gl_position = projectionMatrix * modelViewMatrix * vec4( pos, 1.0 );
 
     }
 
@@ -87,7 +88,7 @@
 
     void main() {
 
-      gl_FragColor = vec4( 1., 0., 0., 1. );
+      gl_FragColor = vec4( .6, .6, 0., 1. );
 
     }
 
@@ -101,44 +102,29 @@
 
     var controls;
 
-    var densityArray, density, heightArray, mdtArray, normals;
+    var densityArray, density, heightArray, normals;
 
     // init();
     // animate();
-  function load_mdt() {
-    let img = new XMLHttpRequest();
-    img.responseType = 'arraybuffer';
-    img.open('GET', 'images/m.bin', true);
-    img.onload = function (e) {
-      if (img.readyState === 4) {
-          if (img.status === 200) {
-              let arrayBuffer = e.target.response;
-              mdtArray = new Uint8Array( arrayBuffer );
-              console.log( mdtArray );
-              init();
-              animate();
-          }
-      }
-    };
-    img.send( null );
-  }
 
   function load_density() {
-    let img = new XMLHttpRequest();
+    var img = new XMLHttpRequest();
     img.responseType = 'arraybuffer';
     img.open('GET', 'images/d.tif', true);
     img.onload = function (e) {
       if (img.readyState === 4) {
           if (img.status === 200) {
-              let arrayBuffer = e.target.response;
-              let byteArray = new Uint8Array(arrayBuffer);
+              var arrayBuffer = e.target.response;
+              var byteArray = new Uint8Array(arrayBuffer);
               densityArray = byteArray.slice( 536 ).map( function( a ) {
                 return a / 10;
               })
               density = densityArray.reduce(function( a, b ) { 
                 return a + b;
               });
-              load_mdt();
+              init();
+              animate();
+              console.log( density );
               }
         }
       };
@@ -146,14 +132,14 @@
   }
 
   function load_image() {
-    let img = new XMLHttpRequest();
+    var img = new XMLHttpRequest();
     img.responseType = 'arraybuffer';
     img.open('GET', 'images/arbolado.tif', true);
     img.onload = function (e) {
       if (img.readyState === 4) {
           if (img.status === 200) {
-              let arrayBuffer = e.target.response;
-              let byteArray = new Uint8Array(arrayBuffer);
+              var arrayBuffer = e.target.response;
+              var byteArray = new Uint8Array(arrayBuffer);
               heightArray = byteArray.slice(496);
               console.log(heightArray);
               load_density();
@@ -182,10 +168,6 @@
       camera.position.z = 4000;
 
       scene = new THREE.Scene();
-      scene.add( new THREE.AmbientLight( 0xffffff, 0.3 ) );
-      const light = new THREE.DirectionalLight( 0xffffff, 0.7 );
-      light.position.set( 0.3, -.2, .4 ).normalize();
-      scene.add( light );
 
       instancedGeometry = new THREE.InstancedBufferGeometry;
 
@@ -197,23 +179,18 @@
       var iterator = 0;
       var scalesIterator = 0;
 
-      var planeGeometry = new THREE.PlaneGeometry( 2000, 2000, 79, 79 );
-      var planeMaterial = new THREE.MeshLambertMaterial( );
-
       for ( i = 0; i < 80; i++ ) {
         for ( n = 0; n < 80; n++ ) {
           
           var index = ( i * 80 ) + n;
           var it = densityArray[ index ];
 
-          planeGeometry.vertices[ index ].z = ( mdtArray[ index ] / 255 ) * 900 - 2;
-
 
           for ( j = 0; j < it; j++ ) {
 
-            instancePositions[ iterator++ ] = ( n * 25 ) - 987.5 + ( Math.random() - 0.5 ) * 25 ;
-            instancePositions[ iterator++ ] = 987.5 - ( i * 25)  + ( Math.random() - 0.5 ) * 25;
-            instancePositions[ iterator++ ] = ( mdtArray[ index ] / 255 ) * 900 + 20;
+            instancePositions[ iterator++ ] = ( n * 25 ) - 1000 + ( Math.random() - 0.5 ) * 25 ;
+            instancePositions[ iterator++ ] = 1000 - ( i * 25)  + ( Math.random() - 0.5 ) * 25;
+            instancePositions[ iterator++ ] = 0 ;
 
             instanceScales[ scalesIterator++ ] = heightArray[ index ];
 
@@ -227,30 +204,16 @@
       instancedGeometry.addAttribute( 'instancePosition', new THREE.InstancedBufferAttribute( instancePositions, 3, 'normalized' ) );
       instancedGeometry.addAttribute( 'instanceScale', new THREE.InstancedBufferAttribute( instanceScales, 1, 'normalized' ) );
 
-      var shaderMaterial = new THREE.MeshLambertMaterial( { color: 'green' } );
-      shaderMaterial.onBeforeCompile = function( shader ) {
+      var shaderMaterial = new THREE.RawShaderMaterial( {
 
-        shader.vertexShader = 'attribute vec3 instancePosition;\n' + shader.vertexShader;
-        shader.vertexShader = 'attribute float instanceScale;\n' + shader.vertexShader;
-        shader.vertexShader = shader.vertexShader.replace( 
+        uniforms: {
+            map: { type: "t", value: mdt},
+        },
+        vertexShader: document.getElementById( 'vertexShader' ).textContent,
+        fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+        vertexColors: true
 
-          '#include <begin_vertex>',
-          'vec3 transformed = vec3( ( position * instanceScale / 15. ) + instancePosition );'
-          );
-
-        materialShader = shader;
-
-      };
-
-
-       // uniforms: {
-       //     map: { type: "t", value: mdt},
-       // },
-       // vertexShader: document.getElementById( 'vertexShader' ).textContent,
-       // fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
-       // vertexColors: true
-
-      //} );
+      } );
 
       // counterparts are drawn all at once with a single draw call (via instanced rendering)
 
@@ -258,6 +221,17 @@
       scene.add( instancedMesh );
 
       // PLANO 
+
+      var planeGeometry = new THREE.PlaneGeometry( 2000, 2000, 80, 80 );
+      var planeMaterial = new THREE.ShaderMaterial( {
+
+        uniforms: {
+            map: { type: "t", value: mdt},
+        },
+        vertexShader: document.getElementById( 'planeVertexShader' ).textContent,
+        fragmentShader: document.getElementById( 'planeFragmentShader' ).textContent,
+
+      });
 
       var plane = new THREE.Mesh( planeGeometry, planeMaterial );
       scene.add( plane );
