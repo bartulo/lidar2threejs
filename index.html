@@ -133,7 +133,7 @@
               let arrayBuffer = e.target.response;
               let byteArray = new Uint8Array(arrayBuffer);
               densityArray = byteArray.slice( 536 ).map( function( a ) {
-                return a / 10;
+                return a / 5;
               })
               density = densityArray.reduce(function( a, b ) { 
                 return a + b;
@@ -204,7 +204,11 @@
         for ( n = 0; n < 80; n++ ) {
           
           var index = ( i * 80 ) + n;
-          var it = densityArray[ index ];
+          if ( Math.ceil( heightArray[ index ] == 0 ) ) {
+            var it = 0
+          } else {
+            var it = ( densityArray[ index ] / ( Math.ceil( heightArray[ index ] ) ) ) * 4  ;
+          }
 
           planeGeometry.vertices[ index ].z = ( mdtArray[ index ] / 255 ) * 900 - 2;
 
@@ -227,7 +231,7 @@
       instancedGeometry.addAttribute( 'instancePosition', new THREE.InstancedBufferAttribute( instancePositions, 3, 'normalized' ) );
       instancedGeometry.addAttribute( 'instanceScale', new THREE.InstancedBufferAttribute( instanceScales, 1, 'normalized' ) );
 
-      var shaderMaterial = new THREE.MeshLambertMaterial( { color: 'green' } );
+      var shaderMaterial = new THREE.MeshLambertMaterial( { color: 'green', opacity: 0.7, transparent: true } );
       shaderMaterial.onBeforeCompile = function( shader ) {
 
         shader.vertexShader = 'attribute vec3 instancePosition;\n' + shader.vertexShader;
@@ -255,11 +259,15 @@
       // counterparts are drawn all at once with a single draw call (via instanced rendering)
 
       var instancedMesh = new THREE.Mesh( instancedGeometry, shaderMaterial );
+      instancedMesh.castShadow = true;
+      instancedMesh.receiveShadow = true;
       scene.add( instancedMesh );
 
       // PLANO 
 
       var plane = new THREE.Mesh( planeGeometry, planeMaterial );
+      plane.castShadow = true;
+      plane.receiveShadow = true;
       scene.add( plane );
 
       renderer = new THREE.WebGLRenderer();
