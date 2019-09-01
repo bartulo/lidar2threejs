@@ -438,6 +438,7 @@ THREE.TrackballControls = function ( object, domElement ) {
 			_panEnd.copy( getMouseOnScreen( event.pageX, event.pageY ) );
 
 		}
+                _this.update();
 
 	}
 
@@ -486,6 +487,7 @@ THREE.TrackballControls = function ( object, domElement ) {
 
 		_this.dispatchEvent( startEvent );
 		_this.dispatchEvent( endEvent );
+                _this.update();
 
 	}
 
@@ -546,6 +548,8 @@ THREE.TrackballControls = function ( object, domElement ) {
 				break;
 
 		}
+
+                _this.update();
 
 	}
 

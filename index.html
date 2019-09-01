@@ -10,88 +10,9 @@
   <div id="container"></div>
 
   <script src="js/three/three.min.js"></script>
+  <script src="js/l2t/l2t.js"></script>
 
   <script src="js/controls/TrackballControls.js"></script>
-
-  <script id="vertexShader" type="x-shader/x-vertex">
-    precision highp float;
-    uniform mat4 modelViewMatrix;
-    uniform mat4 projectionMatrix;
-    uniform mat4 normalMatrix;
-
-    uniform sampler2D map;
-    uniform vec2 uv;
-
-    attribute vec3 position;
-    attribute vec3 normal;
-    attribute vec3 instancePosition;
-    attribute float instanceScale;
-
-    vec3 transform( inout vec3 position, vec3 T, float S) {
-      position *= S / 15.;
-      position.z *= 1.5;
-      position += T;
-      vec4 mdt = texture2D( map, ( position.xy + 1000. ) / 2000. );
-      position.z += mdt.x * 900.;
-      return position;
-    }
-    varying vec3 vPos;
-    varying vec3 vNormal;
-
-    void main(){
-      
-      vec3 pos = position;
-      vNormal = normal;
-      transform( pos, instancePosition, instanceScale );
-      vec3 positionEye = ( modelViewMatrix * vec4( position, 1. ) ).xyz;
-      vPos = positionEye;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4( pos, 1.0 );
-    }
-
-  </script>
-
-  <script id="fragmentShader" type="x-shader/x-fragment">
-
-    precision highp float;
-    varying vec3 vPos;
-    varying vec3 vNormal;
-
-    void main() {
-
-      float diffuse = dot( vNormal, normalize( vec3( 0.1, -0.1, 1.0 ) ) );
-
-      gl_FragColor = vec4( diffuse * vec3( 0., .5, 0. ), 1. );
-
-    }
-
-  </script>
-
-  <script id="planeVertexShader" type="x-shader/x-vertex">
-  
-    precision highp float;
-    uniform sampler2D map;
-
-    void main(){
-      
-      vec3 pos = position;
-      vec4 mdt = texture2D( map, uv );
-      gl_Position = projectionMatrix * modelViewMatrix * vec4( pos, 1.0 );
-
-    }
-
-  </script>
-
-  <script id="planeFragmentShader" type="x-shader/x-fragment">
-
-    precision highp float;
-
-    void main() {
-
-      gl_FragColor = vec4( 1., 0., 0., 1. );
-
-    }
-
-  </script>
 
   <script>
 
@@ -101,78 +22,10 @@
 
     var controls;
 
-    var densityArray, density, heightArray, mdtArray, normals;
-
-    // init();
-    // animate();
-  function load_mdt() {
-    let img = new XMLHttpRequest();
-    img.responseType = 'arraybuffer';
-    img.open('GET', 'images/m.bin', true);
-    img.onload = function (e) {
-      if (img.readyState === 4) {
-          if (img.status === 200) {
-              let arrayBuffer = e.target.response;
-              mdtArray = new Uint8Array( arrayBuffer );
-              console.log( mdtArray );
-              init();
-              animate();
-          }
-      }
-    };
-    img.send( null );
-  }
-
-  function load_density() {
-    let img = new XMLHttpRequest();
-    img.responseType = 'arraybuffer';
-    img.open('GET', 'images/d.tif', true);
-    img.onload = function (e) {
-      if (img.readyState === 4) {
-          if (img.status === 200) {
-              let arrayBuffer = e.target.response;
-              let byteArray = new Uint8Array(arrayBuffer);
-              densityArray = byteArray.slice( 536 ).map( function( a ) {
-                return a / 5;
-              })
-              density = densityArray.reduce(function( a, b ) { 
-                return a + b;
-              });
-              load_mdt();
-              }
-        }
-      };
-    img.send(null);
-  }
-
-  function load_image() {
-    let img = new XMLHttpRequest();
-    img.responseType = 'arraybuffer';
-    img.open('GET', 'images/arbolado.tif', true);
-    img.onload = function (e) {
-      if (img.readyState === 4) {
-          if (img.status === 200) {
-              let arrayBuffer = e.target.response;
-              let byteArray = new Uint8Array(arrayBuffer);
-              heightArray = byteArray.slice(496);
-              console.log(heightArray);
-              load_density();
-          }
-        }
-      }
-    img.send(null);
-  }
-    
-
-
-  //load_image();
-  var loader = new THREE.BufferGeometryLoader();
-  loader.load('arbol.json', function(geo) {
-    byteArray = geo.attributes.position.clone();
-    normals = geo.attributes.normal.clone();
-    console.log(byteArray)
-    load_image();
-  });
+    var shaderMaterial;
+    var instancedGeometry = new L2TGeometry();
+    instancedGeometry.loadData( 'images/densidad.bin', 'images/arbolado.bin' );
+    instancedGeometry.loadModel( 'arbol.json', init );
 
     function init() {
 
@@ -187,83 +40,17 @@
       light.position.set( 0.3, -.2, .4 ).normalize();
       scene.add( light );
 
-      instancedGeometry = new THREE.InstancedBufferGeometry;
-
-      instancedGeometry.addAttribute( 'position', byteArray );
-      instancedGeometry.addAttribute( 'normal', normals );
-
-      var instancePositions = new Float32Array( density * 3 );
-      var instanceScales = new Float32Array( density );
-      var iterator = 0;
-      var scalesIterator = 0;
-
-      var planeGeometry = new THREE.PlaneGeometry( 2000, 2000, 79, 79 );
-      var planeMaterial = new THREE.MeshLambertMaterial( );
-
-      for ( i = 0; i < 80; i++ ) {
-        for ( n = 0; n < 80; n++ ) {
-          
-          var index = ( i * 80 ) + n;
-          if ( Math.ceil( heightArray[ index ] == 0 ) ) {
-            var it = 0
-          } else {
-            var it = ( densityArray[ index ] / ( Math.ceil( heightArray[ index ] ) ) ) * 4  ;
-          }
-
-          planeGeometry.vertices[ index ].z = ( mdtArray[ index ] / 255 ) * 900 - 2;
-
-
-          for ( j = 0; j < it; j++ ) {
-
-            instancePositions[ iterator++ ] = ( n * 25 ) - 987.5 + ( Math.random() - 0.5 ) * 25 ;
-            instancePositions[ iterator++ ] = 987.5 - ( i * 25)  + ( Math.random() - 0.5 ) * 25;
-            instancePositions[ iterator++ ] = ( mdtArray[ index ] / 255 ) * 900 + 20;
-
-            instanceScales[ scalesIterator++ ] = heightArray[ index ];
-
-          }
-        }
-      }
-
-      var mdt = new THREE.TextureLoader().load('images/mdt.png');
-      console.log(mdt);
-
-      instancedGeometry.addAttribute( 'instancePosition', new THREE.InstancedBufferAttribute( instancePositions, 3, 'normalized' ) );
-      instancedGeometry.addAttribute( 'instanceScale', new THREE.InstancedBufferAttribute( instanceScales, 1, 'normalized' ) );
-
-      var shaderMaterial = new THREE.MeshLambertMaterial( { color: 'green', opacity: 0.7, transparent: true } );
-      shaderMaterial.onBeforeCompile = function( shader ) {
-
-        shader.vertexShader = 'attribute vec3 instancePosition;\n' + shader.vertexShader;
-        shader.vertexShader = 'attribute float instanceScale;\n' + shader.vertexShader;
-        shader.vertexShader = shader.vertexShader.replace( 
-
-          '#include <begin_vertex>',
-          'vec3 transformed = vec3( ( position * instanceScale / 15. ) + instancePosition );'
-          );
-
-        materialShader = shader;
-
-      };
-
-
-       // uniforms: {
-       //     map: { type: "t", value: mdt},
-       // },
-       // vertexShader: document.getElementById( 'vertexShader' ).textContent,
-       // fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
-       // vertexColors: true
-
-      //} );
-
-      // counterparts are drawn all at once with a single draw call (via instanced rendering)
-
       var instancedMesh = new THREE.Mesh( instancedGeometry, shaderMaterial );
       instancedMesh.castShadow = true;
       instancedMesh.receiveShadow = true;
       scene.add( instancedMesh );
 
       // PLANO 
+
+      var planeGeometry = new THREE.PlaneGeometry( 2000, 2000, 79, 79 );
+      var planeMaterial = new THREE.MeshLambertMaterial( { wireframe: true } );
+
+      var mdt = new THREE.TextureLoader().load('images/mdt.png');
 
       var plane = new THREE.Mesh( planeGeometry, planeMaterial );
       plane.castShadow = true;
@@ -276,6 +63,7 @@
       container.appendChild( renderer.domElement );
 
       controls = new THREE.TrackballControls( camera, renderer.domElement );
+      controls.addEventListener( 'change', render );
 
       if ( renderer.extensions.get( 'ANGLE_instanced_arrays' ) === null ) {
 
@@ -285,6 +73,7 @@
       }
 
       window.addEventListener( 'resize', onWindowResize, false );
+      render();
 
     }
 
@@ -299,17 +88,7 @@
 
     //
 
-    function animate() {
-
-      requestAnimationFrame( animate );
-
-      render();
-
-    }
-
     function render() {
-
-      controls.update();
 
       renderer.render( scene, camera );
 
