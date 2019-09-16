@@ -1,15 +1,15 @@
 ENVI
 description = {
-arbolado.bin}
-samples = 80
-lines   = 80
+/var/www/html/forex/lidar2threejs/images/arbolado.bin}
+samples = 200
+lines   = 200
 bands   = 1
 header offset = 0
 file type = ENVI Standard
 data type = 1
 interleave = bsq
 byte order = 0
-map info = {Geographic Lat/Lon, 1, 1, 344000, 4464002.5, 25.03125, 25.03125,WGS-84}
+map info = {Geographic Lat/Lon, 1, 1, 343999.670043945, 4464000.0300293, 10.005, 10.005,WGS-84}
 coordinate system string = {GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["Degree",0.017453292519943295]]}
 band names = {
 max}

@@ -548,8 +548,8 @@ THREE.TrackballControls = function ( object, domElement ) {
 				break;
 
 		}
-
                 _this.update();
+
 
 	}
 

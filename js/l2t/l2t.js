@@ -1,11 +1,7 @@
 function L2TGeometry( ) {
 
   THREE.InstancedBufferGeometry.call(this);
-  this.meshArray = new Float32Array();
-  this.meshNormalsArray = new Float32Array();
-  this.heightArray = new Uint8Array();
-  this.densityArray = new Uint8Array();
-  this.densityCount = 10;
+  this.res = 10;
   
   }
 
@@ -17,6 +13,14 @@ L2TGeometry.prototype = Object.assign( Object.create( THREE.InstancedBufferGeome
 
     var scope = this;
 
+    // Leer MDT
+
+    var loaderMDT = new THREE.FileLoader();
+    loaderMDT.setResponseType( 'arraybuffer' );
+
+    loaderMDT.load( 'images/m.bin', function( data ) {
+      var mdtArray = new Uint8Array( data );
+
     // Leer imagen densidades 
 
     var loaderHeight = new THREE.FileLoader();
@@ -24,8 +28,9 @@ L2TGeometry.prototype = Object.assign( Object.create( THREE.InstancedBufferGeome
 
     loaderHeight.load( sourceHeight, function( data ) {
 
-      scope.heightArray = new Uint8Array( data );
-      scope.width = Math.sqrt( scope.heightArray.length );
+      var heightArray = new Uint8Array( data );
+      console.log( heightArray );
+      scope.width = Math.sqrt( heightArray.length );
       
       // Leer imagen de alturas dentro del CallBack 
 
@@ -34,47 +39,60 @@ L2TGeometry.prototype = Object.assign( Object.create( THREE.InstancedBufferGeome
 
       loaderDensity.load( sourceDensity, function( data ) {
         
-        scope.densityArray = new Uint8Array( data );
-        scope.finalDensity = scope.densityArray.map( function( data, index ) {
+        var densityArray = new Uint8Array( data );
+        var finalDensity = densityArray.map( function( data, index ) {
 
-          if ( scope.heightArray[ index ] == 0 ) {
+          if ( heightArray[ index ] == 0 ) {
 
             return 0;
 
           } else {
+
              // TODO jugar con esta función para obtener buenos resultados.
 
-            return Math.ceil( data / scope.heightArray[ index ] );
+            let dens = ( Math.floor( ( data * Math.pow( scope.res, 2 ) / 100 ) / (  Math.pow( ( heightArray[ index ] / 40 ), 2 ) * 3.14 ) ) );
+            if ( dens > 5 ){
+              return 5;
+            } else {
+              return dens;
+            }
           }
 
         });
 
-        scope.densityCount = scope.finalDensity.reduce( function( a, b ) {
+        var densityCount = finalDensity.reduce( function( a, b ) {
           
           return a + b;
 
         });
+        console.log( densityCount );
 
-        var instancePositions = new Float32Array( scope.densityCount * 3 );
-        var instanceScales = new Float32Array( scope.densityCount );
+        var instancePositions = new Float32Array( densityCount * 3 );
+        var instanceScales = new Float32Array( densityCount );
 
         var iterator = 0;
         var scaleIterator = 0;
 
+        console.log( scope.width );
+
         for ( let i  = 0; i < scope.width; i++ ) {
           for ( let n = 0; n < scope.width; n++ ) {
         
-            var index = ( i * 80 ) + n;
+            var index = ( i * scope.width ) + n;
 
-            for ( let j = 0; j < scope.finalDensity[ index ]; j++ ) {
+            planeGeometry.vertices[ index ].z = ( mdtArray[index ] / 255 ) * 900 -2;
+            
+            if ( finalDensity[ index ] != 0 ) {
 
-              instancePositions[ iterator++ ] = ( n * 25 ) - 987.5 + ( Math.random() - 0.5 ) * 25;
-              instancePositions[ iterator++ ] = 987.5 - ( i * 25 ) + ( Math.random() - 0.5 ) * 25;
-              //  TODO z en función de mdt
-              instancePositions[ iterator++ ] = 0;
+              for ( let j = 0; j < finalDensity[ index ]; j++ ) {
 
-              instanceScales[ scaleIterator++ ] = scope.heightArray[ index ];
+                instancePositions[ iterator++ ] = ( n * scope.res ) - 987.5 + ( Math.random() - 0.5 ) * scope.res;
+                instancePositions[ iterator++ ] = 987.5 - ( i * scope.res ) + ( Math.random() - 0.5 ) * scope.res;
+                instancePositions[ iterator++ ] = ( mdtArray[index ] / 255 ) * 900 + 2 ;
 
+                instanceScales[ scaleIterator++ ] = heightArray[ index ] / 1.5;
+
+              }
             }
           }
         }
@@ -91,6 +109,7 @@ L2TGeometry.prototype = Object.assign( Object.create( THREE.InstancedBufferGeome
       });
 
     });
+    });
   },
 
   loadModel: function( source, callback ) {
@@ -100,9 +119,6 @@ L2TGeometry.prototype = Object.assign( Object.create( THREE.InstancedBufferGeome
     var loader = new THREE.BufferGeometryLoader();
 
     loader.load( source, function( data ) {
-
-      scope.meshArray = data.attributes.position.clone();
-      scope.meshNormalsArray = data.attributes.normal.clone();
 
       scope.addAttribute( 'position', data.attributes.position.clone() );
       scope.addAttribute( 'normal', data.attributes.normal.clone() );
@@ -115,7 +131,7 @@ L2TGeometry.prototype = Object.assign( Object.create( THREE.InstancedBufferGeome
         shader.vertexShader = shader.vertexShader.replace(
 
           '#include <begin_vertex>',
-          'vec3 transformed = vec3( ( position * instanceScale / 15. ) + instancePosition );'
+          'vec3 transformed = vec3( ( position * instanceScale / 23. ) + instancePosition );'
           );
 
         materialShader = shader;

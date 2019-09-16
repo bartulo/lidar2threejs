@@ -18,14 +18,17 @@
 
     var container;
 
-    var camera, scene, renderer;
+    var camera, scene, scene2, renderer;
 
     var controls;
 
     var shaderMaterial;
+
+    var planeGeometry = new THREE.PlaneGeometry( 2000, 2000, 199, 199 );
+
     var instancedGeometry = new L2TGeometry();
-    instancedGeometry.loadData( 'images/densidad.bin', 'images/arbolado.bin' );
-    instancedGeometry.loadModel( 'arbol.json', init );
+    instancedGeometry.res = 10;
+    instancedGeometry.loadData( 'images/densidad.bin', 'images/arbolado.bin', instancedGeometry.loadModel.bind( instancedGeometry, 'arbol.json', init ) );
 
     function init() {
 
@@ -35,29 +38,26 @@
       camera.position.z = 4000;
 
       scene = new THREE.Scene();
-      scene.add( new THREE.AmbientLight( 0xffffff, 0.3 ) );
+      scene2 = new THREE.Scene();
+      scene.add( new THREE.AmbientLight( 0xffffff, 0.6 ) );
+      scene2.add( new THREE.AmbientLight( 0xffffff, 0.3 ) );
       const light = new THREE.DirectionalLight( 0xffffff, 0.7 );
       light.position.set( 0.3, -.2, .4 ).normalize();
       scene.add( light );
+      scene2.add( light );
 
       var instancedMesh = new THREE.Mesh( instancedGeometry, shaderMaterial );
-      instancedMesh.castShadow = true;
-      instancedMesh.receiveShadow = true;
-      scene.add( instancedMesh );
+      scene2.add( instancedMesh );
 
       // PLANO 
-
-      var planeGeometry = new THREE.PlaneGeometry( 2000, 2000, 79, 79 );
-      var planeMaterial = new THREE.MeshLambertMaterial( { wireframe: true } );
-
-      var mdt = new THREE.TextureLoader().load('images/mdt.png');
+      var texture = new THREE.TextureLoader().load( 'images/pnoa.jpg' );
+      var planeMaterial = new THREE.MeshLambertMaterial( { map: texture } );
 
       var plane = new THREE.Mesh( planeGeometry, planeMaterial );
-      plane.castShadow = true;
-      plane.receiveShadow = true;
       scene.add( plane );
 
       renderer = new THREE.WebGLRenderer();
+      renderer.autoClear = false;
       renderer.setPixelRatio( window.devicePixelRatio );
       renderer.setSize( window.innerWidth, window.innerHeight );
       container.appendChild( renderer.domElement );
@@ -73,7 +73,7 @@
       }
 
       window.addEventListener( 'resize', onWindowResize, false );
-      render();
+      render()
 
     }
 
@@ -83,6 +83,7 @@
       camera.updateProjectionMatrix();
 
       renderer.setSize( window.innerWidth, window.innerHeight );
+      render();
 
     }
 
@@ -90,7 +91,10 @@
 
     function render() {
 
+      renderer.clear();
       renderer.render( scene, camera );
+      renderer.clearDepth();
+      renderer.render( scene2, camera );
 
     }
 

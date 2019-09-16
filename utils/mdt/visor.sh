@@ -14,4 +14,4 @@ norte=$(($latitud + $extension*500))
 oeste=$(($longitud - $extension*500))
 este=$(($longitud + $extension*500))
 
-/usr/bin/gdal_translate -projwin ${oeste} ${norte} ${este} ${sur} -of GTiff mdt25.xml mdt.tif
+/usr/bin/gdal_translate -projwin ${oeste} ${norte} ${este} ${sur} -of GTiff mdt5.xml mdt.tif
