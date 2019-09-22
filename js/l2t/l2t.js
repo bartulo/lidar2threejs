@@ -51,8 +51,8 @@ L2TGeometry.prototype = Object.assign( Object.create( THREE.InstancedBufferGeome
              // TODO jugar con esta función para obtener buenos resultados.
 
             let dens = ( Math.floor( ( data * Math.pow( scope.res, 2 ) / 100 ) / (  Math.pow( ( heightArray[ index ] / 40 ), 2 ) * 3.14 ) ) );
-            if ( dens > 5 ){
-              return 5;
+            if ( dens > 20 ){
+              return 20;
             } else {
               return dens;
             }
@@ -131,7 +131,13 @@ L2TGeometry.prototype = Object.assign( Object.create( THREE.InstancedBufferGeome
         shader.vertexShader = shader.vertexShader.replace(
 
           '#include <begin_vertex>',
-          'vec3 transformed = vec3( ( position * instanceScale / 23. ) + instancePosition );'
+          `vec4 wa = vec4( instanceScale / 17., 0., 0., 1. );
+          vec4 xa = vec4( 0., instanceScale / 17., 0., 1. );
+          vec4 ya = vec4( 0., 0., instanceScale / 6., 1.);
+          vec4 za = vec4( 0., 0., 0., 1. );
+          mat4 instanceMatrix = mat4( wa, xa, ya, za );
+          vec3 transformed = ( ( instanceMatrix * vec4( position, 1. ) ).xyz ) + instancePosition;
+          `
           );
 
         materialShader = shader;

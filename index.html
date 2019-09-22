@@ -28,7 +28,7 @@
 
     var instancedGeometry = new L2TGeometry();
     instancedGeometry.res = 10;
-    instancedGeometry.loadData( 'images/densidad.bin', 'images/arbolado.bin', instancedGeometry.loadModel.bind( instancedGeometry, 'arbol.json', init ) );
+    instancedGeometry.loadData( 'images/densidad.bin', 'images/arbolado.bin', instancedGeometry.loadModel.bind( instancedGeometry, 'icosphere.json', init ) );
 
     function init() {
 
@@ -43,8 +43,8 @@
       scene2.add( new THREE.AmbientLight( 0xffffff, 0.3 ) );
       const light = new THREE.DirectionalLight( 0xffffff, 0.7 );
       const light2 = new THREE.DirectionalLight( 0xffffff, 0.7 );
-      light.position.set( 0.1, -.2, .1 ).normalize();
-      light2.position.set( 0.1, -.2, .1 ).normalize();
+      light.position.set( 0.3, -.2, .4 ).normalize();
+      light2.position.set( 0.3, -.2, .4 ).normalize();
       light.castShadow = true;
       scene2.add( light2 );
       scene.add( light );
