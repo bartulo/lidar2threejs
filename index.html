@@ -35,7 +35,9 @@
       container = document.getElementById( 'container' );
 
       camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.01, 10000 );
-      camera.position.z = 4000;
+      camera.position.set( -900, -1500, 1200 );
+      camera.up = new THREE.Vector3( 0, 0, 1 );
+      camera.lookAt( new THREE.Vector3( 0, 0, 0 ) );
 
       scene = new THREE.Scene();
       scene2 = new THREE.Scene();

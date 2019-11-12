@@ -74,6 +74,7 @@ L2TGeometry.prototype = Object.assign( Object.create( THREE.InstancedBufferGeome
         var scaleIterator = 0;
 
         console.log( scope.width );
+        console.log( scope.res );
 
         for ( let i  = 0; i < scope.width; i++ ) {
           for ( let n = 0; n < scope.width; n++ ) {
@@ -86,8 +87,8 @@ L2TGeometry.prototype = Object.assign( Object.create( THREE.InstancedBufferGeome
 
               for ( let j = 0; j < finalDensity[ index ]; j++ ) {
 
-                instancePositions[ iterator++ ] = ( n * scope.res ) - 987.5 + ( Math.random() - 0.5 ) * scope.res;
-                instancePositions[ iterator++ ] = 987.5 - ( i * scope.res ) + ( Math.random() - 0.5 ) * scope.res;
+                instancePositions[ iterator++ ] = ( n * scope.res ) - 995 + ( Math.random() - .5 ) * scope.res;
+                instancePositions[ iterator++ ] = 995 - ( i * scope.res ) + ( Math.random() - .5 ) * scope.res;
                 instancePositions[ iterator++ ] = ( mdtArray[index ] / 255 ) * 900 + 2 ;
 
                 instanceScales[ scaleIterator++ ] = heightArray[ index ] / 1.5;
@@ -131,8 +132,8 @@ L2TGeometry.prototype = Object.assign( Object.create( THREE.InstancedBufferGeome
         shader.vertexShader = shader.vertexShader.replace(
 
           '#include <begin_vertex>',
-          `vec4 wa = vec4( instanceScale / 17., 0., 0., 1. );
-          vec4 xa = vec4( 0., instanceScale / 17., 0., 1. );
+          `vec4 wa = vec4( instanceScale / 21., 0., 0., 1. );
+          vec4 xa = vec4( 0., instanceScale / 21., 0., 1. );
           vec4 ya = vec4( 0., 0., instanceScale / 6., 1.);
           vec4 za = vec4( 0., 0., 0., 1. );
           mat4 instanceMatrix = mat4( wa, xa, ya, za );
